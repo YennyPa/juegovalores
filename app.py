@@ -611,13 +611,71 @@ elif st.session_state.fase == 4:
 elif st.session_state.fase == 5:
     st.markdown("<h1 class='main-title'>⭐ Fase 5: Integración</h1>", unsafe_allow_html=True)
     
-    c1, c2 = st.columns([1, 2])
+    c1, c2 = st.columns([1, 1.3])
     with c1:
         st.markdown(html_card(super_valor_confianza["nombre"], super_valor_confianza["emoji"], super_valor_confianza["categoria"], super_valor_confianza["color"], super_valor_confianza["descripcion"], super_valor_confianza["imagen"], True), unsafe_allow_html=True)
     with c2:
-        st.session_state.respuestas_reflexion["confianza_impacto"] = st.text_area("¿Cómo cambiaría tu vida si vivieras estos valores con plena confianza?")
+        st.subheader("El impacto del Supervalor")
+        st.session_state.respuestas_reflexion["confianza_impacto"] = st.text_area(
+            "¿Cómo cambiaría tu vida si vivieras tu Top 5 de valores con plena confianza?",
+            value=st.session_state.respuestas_reflexion.get("confianza_impacto", "")
+        )
         
-        # Generar bitácora en texto plano
-        reporte = f"Tu Top 5:\n1. {st.session_state.jerarquia[1]}\n2. {st.session_state.jerarquia[2]}\n3. {st.session_state.jerarquia[3]}\n4. {st.session_state.jerarquia[4]}\n5. {st.session_state.jerarquia[5]}\n"
+        st.markdown("---")
+        st.markdown("### 🗺️ Tu Mapa de Valores está listo")
+        st.write("Has completado todo el viaje de exploración. Ahora puedes descargar tu bitácora detallada con tus reflexiones.")
+
+        # =====================================================================
+        # CONSTRUCCIÓN DEL INFORME EN TEXTO PLANO (ESTILO MAPA DE VALORES)
+        # =====================================================================
+        # Recuperamos los valores de la jerarquía de forma segura
+        j1 = st.session_state.jerarquia.get(1, "No asignado")
+        j2 = st.session_state.jerarquia.get(2, "No asignado")
+        j3 = st.session_state.jerarquia.get(3, "No asignado")
+        j4 = st.session_state.jerarquia.get(4, "No asignado")
+        j5 = st.session_state.jerarquia.get(5, "No asignado")
         
-        st.download_button("📥 Descargar Bitácora", data=reporte, file_name="bitacora.txt")
+        informe_txt = f"""==================================================
+                 MI MAPA DE VALORES
+==================================================
+Fecha de Reflexión: 2026
+
+JERARQUÍA COMPLETA (Top 5):
+1. {j1}
+2. {j2}
+3. {j3}
+4. {j4}
+5. {j5}
+
+--------------------------------------------------
+CUADERNO DE INDAGACIÓN:
+--------------------------------------------------
+1. ¿Por qué estos pilares?
+{st.session_state.respuestas_reflexion.get('por_que', 'Sin respuesta')}
+
+2. ¿Cuándo y cómo vives actualmente estos valores?
+{st.session_state.respuestas_reflexion.get('cuando_vivo', 'Sin respuesta')}
+
+3. ¿En qué situaciones o áreas sientes que no los estás alineando?
+{st.session_state.respuestas_reflexion.get('cuando_no', 'Sin respuesta')}
+
+--------------------------------------------------
+INTEGRACIÓN CON LA CONFIANZA:
+--------------------------------------------------
+A. El impacto del Supervalor:
+¿Cómo cambiaría tu vida si vivieras estos valores con plena confianza?
+{st.session_state.respuestas_reflexion.get('confianza_impacto', 'Sin respuesta')}
+
+==================================================
+"Este juego no busca respuestas correctas, sino conciencia."
+==================================================
+"""
+        
+        # Botón de descarga con el estilo y ancho completo que te gustó
+        st.download_button(
+            label="📥 Descargar Mi Bitácora de Valores (TXT)",
+            data=informe_txt,
+            file_name="Mi_Mapa_de_Valores.txt",
+            mime="text/plain",
+            use_container_width=True
+        )
