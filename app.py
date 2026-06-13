@@ -401,44 +401,125 @@ if st.session_state.fase == 0:
     with col_der:
         st.image("https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=600&q=80")
 
-# FASE 1: EXPLORACIÓN (Elegir 12)
+# FASE 1: EXPLORACIÓN (Estilo Tinder con Tablero de Intercambio Inferior)
 elif st.session_state.fase == 1:
-    st.markdown("<h1 class='main-title'>🔍 Fase 1: Exploración</h1>", unsafe_allow_html=True)
-    cuenta = len(st.session_state.seleccionados_12)
+    st.markdown("<h1 class='main-title'>🔍 Fase 1: Selección y Ajuste de Valores</h1>", unsafe_allow_html=True)
     
-    col_cont_1, col_cont_2 = st.columns([3, 1])
-    with col_cont_1:
-        st.info(f"💡 **Cartas seleccionadas:** {cuenta} de **12 requeridas**.")
-    with col_cont_2:
-        if cuenta == 12:
-            if st.button("Siguiente fase ➔", type="primary", use_container_width=True):
+    # Inicializar variables de control en el session_state si no existen
+    if "tinder_index" not in st.session_state:
+        st.session_state.tinder_index = 0
+
+    lista_valores = list(valores_db.keys())
+    total_cartas = len(lista_valores)
+    cuenta_seleccionados = len(st.session_state.seleccionados_12)
+
+    # BARRA DE ESTADO SUPERIOR
+    col_progreso, col_boton_sig = st.columns([3, 1])
+    with col_progreso:
+        st.write(f"💼 **Espacios ocupados:** {cuenta_seleccionados} de 12 requeridos")
+        st.progress(cuenta_seleccionados / 12.0)
+    
+    with col_boton_sig:
+        # El botón para avanzar solo se activa si se tienen exactamente 12 valores
+        if cuenta_seleccionados == 12:
+            if st.button("Ir a Priorización ➔", type="primary", use_container_width=True):
                 st.session_state.fase = 2
                 st.rerun()
         else:
-            st.button("Siguiente fase ➔", disabled=True, use_container_width=True)
+            st.button("Completa 12 para avanzar", disabled=True, use_container_width=True)
 
-    filtro = st.radio("Filtrar por:", ["Todos", "SER", "RELACIÓN", "CONTRIBUCIÓN"], horizontal=True)
+    st.markdown("---")
+
+    # CONTROL DE RECORRIDO DEL MAZO (Loop infinito para garantizar exploración total)
+    if st.session_state.tinder_index >= total_cartas:
+        st.session_state.tinder_index = 0  # Reinicia el mazo para seguir explorando si el usuario quiere
+        st.rerun()
+
+    # OBTENER CARTA ACTUAL
+    nombre_carta = lista_valores[st.session_state.tinder_index]
+    datos = valores_db[nombre_carta]
     
-    cols = st.columns(3)
-    idx = 0
-    for nombre, datos in valores_db.items():
-        if filtro != "Todos" and filtro not in datos["categoria"]:
-            continue
-            
-        with cols[idx % 3]:
-            is_selected = nombre in st.session_state.seleccionados_12
-            # Aquí inyectamos el HTML de manera correcta usando la bandera unsafe_allow_html
-            st.markdown(html_card(nombre, datos["emoji"], datos["categoria"], datos["color"], datos["descripcion"], datos["imagen"], is_selected), unsafe_allow_html=True)
-            
-            check = st.checkbox("Seleccionar", key=f"chk_{nombre}", value=is_selected)
-            if check and nombre not in st.session_state.seleccionados_12:
-                if len(st.session_state.seleccionados_12) < 12:
-                    st.session_state.seleccionados_12.append(nombre)
-                    st.rerun()
-            elif not check and nombre in st.session_state.seleccionados_12:
-                st.session_state.seleccionados_12.remove(nombre)
+    # ¿La carta actual ya está guardada en los 12?
+    ya_seleccionada = nombre_carta in st.session_state.seleccionados_12
+
+    # RENDERIZAR CARTA CENTRAL
+    _, col_central, _ = st.columns([1, 1.3, 1])
+    with col_central:
+        st.markdown(f"<p style='text-align: center; color: #6B7280; margin-bottom: 2px;'>Evaluando carta {st.session_state.tinder_index + 1} de {total_cartas}</p>", unsafe_allow_html=True)
+        
+        # Renderizar la tarjeta HTML con borde destacado si ya pertenece a la selección
+        st.markdown(html_card(nombre_carta, datos["emoji"], datos["categoria"], datos["color"], datos["descripcion"], datos["imagen"], ya_seleccionada), unsafe_allow_html=True)
+        
+        # BOTONES DE ACCIÓN PRINCIPALES
+        col_rechazar, col_aceptar = st.columns(2)
+        with col_rechazar:
+            if st.button("❌ Saltar / Descartar", use_container_width=True, key=f"skip_{nombre_carta}"):
+                st.session_state.tinder_index += 1
                 st.rerun()
-        idx += 1
+                
+        with col_aceptar:
+            # Si ya está seleccionada o si el mazo de 12 ya está lleno, se deshabilita la inserción directa
+            bloquear_conservar = ya_seleccionada or cuenta_seleccionados >= 12
+            
+            if st.button("💚 Conservar (Añadir)", type="primary", use_container_width=True, disabled=bloquear_conservar, key=f"keep_{nombre_carta}"):
+                if nombre_carta not in st.session_state.seleccionados_12:
+                    st.session_state.seleccionados_12.append(nombre_carta)
+                st.session_state.tinder_index += 1
+                st.rerun()
+
+    # =====================================================================
+    # SECCIÓN INFERIOR: EL TABLERO DE LOS 12 SLOTS (INTERCAMBIADOR)
+    # =====================================================================
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    st.markdown("### 📥 Tu Mazo Actual (Máximo 12)")
+    
+    if cuenta_seleccionados == 12 and not ya_seleccionada:
+        st.info(f"💡 **Modo Intercambio Activo:** Tu mazo está lleno. Si prefieres '**{nombre_carta}**' sobre uno de tus valores actuales, haz clic en el botón del valor que deseas reemplazar aquí abajo.")
+    elif ya_seleccionada:
+        st.warning(f"⭐ La carta actual '**{nombre_carta}**' ya forma parte de tus 12 valores elegidos.")
+
+    # Crear una cuadrícula de 6 columnas x 2 filas para los 12 slots de forma compacta
+    cols_slots = st.columns(6)
+    
+    for slot_idx in range(12):
+        columna_actual = cols_slots[slot_idx % 6]
+        
+        with columna_actual:
+            # Si el slot ya tiene un valor asignado
+            if slot_idx < len(st.session_state.seleccionados_12):
+                valor_guardado = st.session_state.seleccionados_12[slot_idx]
+                datos_guardados = valores_db[valor_guardado]
+                
+                # Diseño visual mini para el slot ocupado
+                st.markdown(
+                    f"""<div style='text-align: center; background-color: white; border: 1px solid #E5E7EB; border-radius: 8px; padding: 6px; font-size: 0.8rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); min-height: 55px; display: flex; align-items: center; justify-content: center;'>
+                        <b>{datos_guardados['emoji']} {valor_guardado}</b>
+                    </div>""", 
+                    unsafe_allow_html=True
+                )
+                
+                # Botón para expulsar o reemplazar según el estado del mazo
+                if cuenta_seleccionados == 12 and not ya_seleccionada:
+                    # Si está lleno, el botón sirve para reemplazar por la carta activa en pantalla
+                    if st.button(f"🔄 Cambiar", key=f"slot_btn_{slot_idx}", use_container_width=True):
+                        st.session_state.seleccionados_12[slot_idx] = nombre_carta
+                        st.session_state.tinder_index += 1
+                        st.rerun()
+                else:
+                    # Si aún no está lleno, funciona como un botón para remover directamente si se arrepiente
+                    if st.button(f"🗑️ Quitar", key=f"slot_btn_{slot_idx}", use_container_width=True):
+                        st.session_state.seleccionados_12.pop(slot_idx)
+                        st.rerun()
+            else:
+                # Slot vacío
+                st.markdown(
+                    f"""<div style='text-align: center; color: #9CA3AF; background-color: #F3F4F6; border: 2px dashed #D1D5DB; border-radius: 8px; padding: 6px; font-size: 0.8rem; min-height: 55px; display: flex; align-items: center; justify-content: center;'>
+                        <i>Vacío ({slot_idx + 1})</i>
+                    </div>""", 
+                    unsafe_allow_html=True
+                )
+                # Espacio vacío para alinear la cuadrícula visualmente
+                st.button("❌", key=f"slot_empty_{slot_idx}", disabled=True, use_container_width=True)
 
 # FASE 2: PRIORIZACIÓN (Elegir 5 de las 12)
 elif st.session_state.fase == 2:
