@@ -476,24 +476,44 @@ elif st.session_state.fase == 2:
 elif st.session_state.fase == 3:
     st.markdown("<h1 class='main-title'>🏆 Fase 3: Jerarquización</h1>", unsafe_allow_html=True)
     
-    valores_asignados = [st.session_state.jerarquia[i] for i in range(1, 6)]
-    todos_asignados = None not in valores_asignados and len(set(valores_asignados)) == 5
-    
-    if todos_asignados:
-        if st.button("Siguiente fase ➔", type="primary"):
-            st.session_state.fase = 4
-            st.rerun()
-
     col1, col2 = st.columns(2)
     with col1:
+        st.subheader("Asigna las posiciones:")
         for pos in range(1, 6):
-            sel = st.selectbox(f"Posición {pos}", ["-- Elegir --"] + st.session_state.seleccionados_5, key=f"pos_{pos}")
+            # Determinamos el índice por defecto si ya existía una selección previa
+            opciones = ["-- Elegir --"] + st.session_state.seleccionados_5
+            valor_actual = st.session_state.jerarquia.get(pos)
+            def_idx = opciones.index(valor_actual) if valor_actual in opciones else 0
+            
+            sel = st.selectbox(f"Posición #{pos}", opciones, index=def_idx, key=f"pos_{pos}")
             if sel != "-- Elegir --":
                 st.session_state.jerarquia[pos] = sel
+            else:
+                st.session_state.jerarquia[pos] = None
+
     with col2:
         st.subheader("Tu Orden actual:")
+        valores_asignados = []
         for pos in range(1, 6):
-            st.write(f"#{pos}: {st.session_state.jerarquia[pos]}")
+            val = st.session_state.jerarquia.get(pos)
+            valores_asignados.append(val)
+            st.write(f"**#{pos}:** {val if val else '⏳ Pendiente...'}")
+        
+        st.markdown("---")
+        
+        # Validamos que se hayan completado las 5 posiciones sin dejar nulos y sin repetir valores
+        valores_validos = [v for v in valores_asignados if v is not None]
+        todos_asignados = len(valores_validos) == 5 and len(set(valores_validos)) == 5
+        
+        if todos_asignados:
+            if st.button("Siguiente fase: Reflexión ➔", type="primary", use_container_width=True):
+                st.session_state.fase = 4
+                st.rerun()
+        else:
+            if len(set(valores_validos)) != len(valores_validos):
+                st.warning("⚠️ Hay valores repetidos en la jerarquía. Elige un valor único para cada posición.")
+            else:
+                st.info("💡 Por favor, asigna un valor a las 5 posiciones para poder continuar.")
 
 # FASE 4: REFLEXIÓN
 elif st.session_state.fase == 4:
