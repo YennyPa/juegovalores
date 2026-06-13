@@ -135,7 +135,7 @@ valores_db = {
     "Compasión": {
         "categoria": "RELACIÓN (Interpersonales)", "color": "#10B981", "emoji": "❤️",
         "descripcion": "El deseo sincero de aliviar el sufrimiento de los otros y acompañarles en sus momentos de dificultad.",
-        "imagen": "https://images.unsplash.com/photo-1469571486040-0b3b11419913?auto=format&fit=crop&w=400&q=80"
+        "imagen": "https://images.unsplash.com/photo-1516627145497-ae6968895b74?auto=format&fit=crop&w=400&q=80"
     },
     "Generosidad": {
         "categoria": "RELACIÓN (Interpersonales)", "color": "#10B981", "emoji": "🎁",
